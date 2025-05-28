@@ -1,0 +1,61 @@
+{
+  "name": "ElectricMeterProtocol",
+  "version": "0.0.1",
+  "description": "Library for communication with electric meters via CC1101 using custom protocol",
+  "keywords": [
+    "electric meter",
+    "cc1101",
+    "radio",
+    "protocol",
+    "esp32",
+    "arduino",
+    "energy",
+    "meter reading",
+    "wireless"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/compico/mirlib"
+  },
+  "authors": [
+    {
+      "name": "compico",
+      "email": "compico@mail.ru"
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/username/ElectricMeterProtocol",
+  "dependencies": {
+    "smartrc-cc1101-driver-lib": "^2.5.7"
+  },
+  "frameworks": [
+    "arduino"
+  ],
+  "platforms": [
+    "espressif32",
+    "espressif8266",
+    "atmelavr",
+    "atmelsam"
+  ],
+  "export": {
+    "include": [
+      "src/*",
+      "examples/*",
+      "*.md",
+      "*.txt",
+      "*.json",
+      "*.properties",
+      "CMakeLists.txt"
+    ]
+  },
+  "build": {
+    "libCompatMode": 2,
+    "srcFilter": [
+      "+<src/>",
+      "-<examples/>"
+    ],
+    "flags": [
+      "-std=c++11"
+    ]
+  }
+}

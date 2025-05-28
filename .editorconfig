@@ -1,0 +1,114 @@
+root = true
+
+# Общие настройки для всех файлов
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C/C++ файлы (основной код библиотеки)
+[*.{c,cpp,cc,cxx,c++,h,hpp,hh,hxx,h++}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+curly_bracket_next_line = false
+spaces_around_operators = true
+spaces_around_brackets = false
+
+# Arduino sketch файлы (.ino)
+[*.ino]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+curly_bracket_next_line = false
+
+# Заголовочные файлы библиотеки
+[src/*.{h,hpp}]
+indent_style = space
+indent_size = 2
+max_line_length = 100
+
+# Примеры кода
+[examples/**/*.{ino,cpp,h}]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+# Примеры могут быть короче для лучшей читаемости
+
+# Файлы конфигурации Arduino
+[{library.properties,keywords.txt}]
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+
+# JSON файлы (package.json, arduino-cli.yaml и т.д.)
+[*.{json,jsonc}]
+indent_style = space
+indent_size = 2
+
+# YAML файлы (GitHub Actions, arduino-cli config)
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown файлы (README, документация)
+[*.{md,markdown}]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+trim_trailing_whitespace = false
+# Не удаляем trailing spaces в markdown (могут быть значимыми)
+
+# Файлы документации
+[{README,CHANGELOG,LICENSE,CONTRIBUTING}*]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+
+# Makefile
+[{Makefile,makefile,*.mk}]
+indent_style = tab
+indent_size = 4
+
+# Shell скрипты
+[*.{sh,bash}]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+
+# Batch файлы (Windows)
+[*.{bat,cmd}]
+indent_style = space
+indent_size = 2
+end_of_line = crlf
+
+# Git файлы
+[{.gitignore,.gitattributes,.gitmodules}]
+indent_style = space
+indent_size = 2
+
+# CMake файлы (если используются)
+[{CMakeLists.txt,*.cmake}]
+indent_style = space
+indent_size = 2
+
+# Platformio файлы (если используется PlatformIO)
+[platformio.ini]
+indent_style = space
+indent_size = 2
+
+# Конфигурационные файлы
+[*.{ini,cfg,conf,config}]
+indent_style = space
+indent_size = 2
+
+# XML файлы
+[*.{xml,plist}]
+indent_style = space
+indent_size = 2
+
+# Временные и генерируемые файлы (обычно игнорируются)
+[{*.tmp,*.temp,*.bak,*.orig}]
+insert_final_newline = false
+trim_trailing_whitespace = false

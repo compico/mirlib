@@ -1,0 +1,123 @@
+#######################################
+# Syntax Coloring Map For Mirlib
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+Mirlib	KEYWORD1
+BaseCommand	KEYWORD1
+PingCommand	KEYWORD1
+GetInfoCommand	KEYWORD1
+ReadStatusCommand	KEYWORD1
+TypedCommand	KEYWORD1
+ProtocolUtils	KEYWORD1
+PacketData	KEYWORD1
+Parameters	KEYWORD1
+ConfigByte	KEYWORD1
+GenerationInfo	KEYWORD1
+GetInfoResponseBase	KEYWORD1
+PingResponse	KEYWORD1
+ReadStatusResponseOld	KEYWORD1
+ReadStatusResponseNew	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin	KEYWORD2
+sendCommand	KEYWORD2
+processIncomingPackets	KEYWORD2
+autoDetectGeneration	KEYWORD2
+setPassword	KEYWORD2
+setStatus	KEYWORD2
+setTimeout	KEYWORD2
+registerCommandHandler	KEYWORD2
+setDebugMode	KEYWORD2
+getLastError	KEYWORD2
+getGeneration	KEYWORD2
+getDeviceAddress	KEYWORD2
+
+prepareRequest	KEYWORD2
+parseResponse	KEYWORD2
+handleRequest	KEYWORD2
+getCommandName	KEYWORD2
+isValidForGeneration	KEYWORD2
+getMinRequestSize	KEYWORD2
+getResponseSizeRange	KEYWORD2
+requiresPassword	KEYWORD2
+validateRequest	KEYWORD2
+validateResponse	KEYWORD2
+
+calculateCRC8	KEYWORD2
+byteStuffing	KEYWORD2
+byteUnstuffing	KEYWORD2
+packPacket	KEYWORD2
+unpackPacket	KEYWORD2
+encodeData	KEYWORD2
+decodeData	KEYWORD2
+uint16ToBytes	KEYWORD2
+uint32ToBytes	KEYWORD2
+bytesToUint16	KEYWORD2
+bytesToUint32	KEYWORD2
+determineGeneration	KEYWORD2
+validatePacket	KEYWORD2
+printPacketHex	KEYWORD2
+printHex	KEYWORD2
+createRequestPacket	KEYWORD2
+createResponsePacket	KEYWORD2
+getCommandName	KEYWORD2
+getEnergyTypeName	KEYWORD2
+getBoardGenerationName	KEYWORD2
+
+setupMQTT	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+CLIENT	LITERAL1
+SERVER	LITERAL1
+
+OLD_GENERATION	LITERAL1
+TRANSITION_GENERATION	LITERAL1
+NEW_GENERATION	LITERAL1
+UNKNOWN	LITERAL1
+
+CMD_PING	LITERAL1
+CMD_READ_STATUS	LITERAL1
+CMD_GET_INFO	LITERAL1
+
+ACTIVE_FORWARD	LITERAL1
+ACTIVE_REVERSE	LITERAL1
+REACTIVE_FORWARD	LITERAL1
+REACTIVE_REVERSE	LITERAL1
+ACTIVE_ABSOLUTE	LITERAL1
+REACTIVE_ABSOLUTE	LITERAL1
+REACTIVE_Q1	LITERAL1
+REACTIVE_Q2	LITERAL1
+REACTIVE_Q3	LITERAL1
+REACTIVE_Q4	LITERAL1
+
+BOARD_OLD_01	LITERAL1
+BOARD_OLD_02	LITERAL1
+BOARD_OLD_03	LITERAL1
+BOARD_OLD_04	LITERAL1
+BOARD_OLD_0C	LITERAL1
+BOARD_OLD_0D	LITERAL1
+BOARD_OLD_11	LITERAL1
+BOARD_OLD_12	LITERAL1
+
+BOARD_TRANS_07	LITERAL1
+BOARD_TRANS_08	LITERAL1
+BOARD_TRANS_0A	LITERAL1
+BOARD_TRANS_0B	LITERAL1
+
+BOARD_NEW_09	LITERAL1
+BOARD_NEW_0E	LITERAL1
+BOARD_NEW_0F	LITERAL1
+BOARD_NEW_10	LITERAL1
+BOARD_NEW_20	LITERAL1
+BOARD_NEW_21	LITERAL1
+BOARD_NEW_22	LITERAL1

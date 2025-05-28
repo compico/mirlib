@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+.idea
+clion_paths.cmake
+arduino_includes.h

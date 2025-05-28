@@ -1,0 +1,167 @@
+---
+
+Checks: >
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  google-*,
+  hicpp-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-narrowing-conversions,
+  -bugprone-signed-char-misuse,
+  -cert-dcl21-cpp,
+  -cert-dcl50-cpp,
+  -cert-err58-cpp,
+  -cert-oop57-cpp,
+  -clang-analyzer-cplusplus.NewDeleteLeaks,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-narrowing-conversions,
+  -cppcoreguidelines-no-malloc,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-cstyle-cast,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-special-member-functions,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -google-build-using-namespace,
+  -google-explicit-constructor,
+  -google-readability-avoid-underscore-in-googletest-name,
+  -google-readability-todo,
+  -hicpp-avoid-c-arrays,
+  -hicpp-explicit-conversions,
+  -hicpp-no-malloc,
+  -hicpp-signed-bitwise,
+  -hicpp-special-member-functions,
+  -hicpp-vararg,
+  -misc-no-recursion,
+  -misc-non-private-member-variables-in-classes,
+  -misc-unused-parameters,
+  -misc-use-anonymous-namespace,
+  -modernize-avoid-c-arrays,
+  -modernize-use-equals-default,
+  -modernize-use-nodiscard,
+  -modernize-use-trailing-return-type,
+  -readability-avoid-const-params-in-decls,
+  -readability-function-cognitive-complexity,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-named-parameter,
+  -readability-uppercase-literal-suffix,
+  -readability-convert-member-functions-to-static
+
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.ClassPrefix
+    value: ''
+  - key: readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.ConstantPrefix
+    value: ''
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumPrefix
+    value: ''
+  - key: readability-identifier-naming.EnumConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: camelBack
+  - key: readability-identifier-naming.LocalConstantCase
+    value: camelBack
+  - key: readability-identifier-naming.LocalVariableCase
+    value: camelBack
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.MemberConstantCase
+    value: camelBack
+  - key: readability-identifier-naming.MemberVariableCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.MemberVariableSuffix
+    value: ''
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.ParameterCase
+    value: camelBack
+  - key: readability-identifier-naming.PrivateMemberCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.PrivateMemberSuffix
+    value: ''
+  - key: readability-identifier-naming.ProtectedMemberCase
+    value: aNy_CasE
+  - key: readability-identifier-naming.ProtectedMemberSuffix
+    value: ''
+  - key: readability-identifier-naming.PublicMemberCase
+    value: camelBack
+  - key: readability-identifier-naming.StaticConstantCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.StaticVariableCase
+    value: camelBack
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: performance-for-range-copy.WarnOnAllAutoCopies
+    value: true
+  - key: performance-move-const-arg.CheckTriviallyCopyableMove
+    value: false
+  - key: performance-unnecessary-value-param.AllowedTypes
+    value: 'String;IPAddress'
+  - key: readability-braces-around-statements.ShortStatementLines
+    value: 2
+  - key: readability-function-size.LineThreshold
+    value: 150
+  - key: readability-function-size.StatementThreshold
+    value: 75
+  - key: readability-function-size.BranchThreshold
+    value: 20
+  - key: readability-function-size.ParameterThreshold
+    value: 10
+  - key: readability-function-size.NestingThreshold
+    value: 6
+  - key: readability-function-size.VariableThreshold
+    value: 25
+  - key: bugprone-argument-comment.StrictMode
+    value: false
+  - key: bugprone-suspicious-string-compare.WarnOnImplicitComparison
+    value: true
+  - key: bugprone-suspicious-string-compare.WarnOnLogicalNotComparison
+    value: true
+  - key: modernize-loop-convert.MaxCopySize
+    value: 16
+  - key: modernize-loop-convert.MinConfidence
+    value: reasonable
+  - key: modernize-pass-by-value.IncludeStyle
+    value: llvm
+  - key: modernize-replace-auto-ptr.IncludeStyle
+    value: llvm
+  - key: modernize-use-auto.MinTypeNameLength
+    value: 5
+
+HeaderFilterRegex: '^(?!.*/(examples|test|tests|third_party)/)'
+
+WarningsAsErrors: ''
+FormatStyle: none
+
+SystemHeaders: false
