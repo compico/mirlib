@@ -1,5 +1,5 @@
 {
-  "name": "ElectricMeterProtocol",
+  "name": "Mirlib",
   "version": "0.0.1",
   "description": "Library for communication with electric meters via CC1101 using custom protocol",
   "keywords": [
@@ -24,7 +24,7 @@
     }
   ],
   "license": "MIT",
-  "homepage": "https://github.com/username/ElectricMeterProtocol",
+  "homepage": "https://github.com/compico/mirlib",
   "dependencies": {
     "smartrc-cc1101-driver-lib": "^2.5.7"
   },
