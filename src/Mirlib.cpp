@@ -10,6 +10,7 @@ Mirlib::Mirlib(Mode mode, uint16_t deviceAddress)
       , m_serverGeneration(NEW_GENERATION)
       , m_debugMode(false)
       , m_gdo0Pin(2) // По умолчанию пин 2 для GDO0
+      , m_commandHandlers(nullptr)
 {
     memset(m_lastError, 0, sizeof(m_lastError));
 
@@ -17,6 +18,10 @@ Mirlib::Mirlib(Mode mode, uint16_t deviceAddress)
     if (m_mode == SERVER) {
         registerDefaultHandlers();
     }
+}
+
+Mirlib::~Mirlib() {
+    clearCommandHandlers();
 }
 
 bool Mirlib::begin(int csPin, int gdo0Pin, int gdo2Pin) {
@@ -350,8 +355,38 @@ bool Mirlib::receivePacketOriginalStyle(PacketData &packet, uint32_t timeout) {
 }
 
 void Mirlib::registerCommandHandler(uint8_t commandCode,
-                                    std::function<bool(const PacketData &, PacketData &)> handler) {
-    m_commandHandlers[commandCode] = handler;
+                                    bool (*handlerFunc)(const PacketData &, PacketData &, void *),
+                                    void *context) {
+    // Создаем новый обработчик
+    CommandHandler *newHandler = new CommandHandler();
+    newHandler->commandCode = commandCode;
+    newHandler->handlerFunc = handlerFunc;
+    newHandler->context = context;
+    newHandler->next = m_commandHandlers;
+
+    // Добавляем в начало списка
+    m_commandHandlers = newHandler;
+}
+
+CommandHandler *Mirlib::findCommandHandler(uint8_t commandCode) {
+    CommandHandler *current = m_commandHandlers;
+    while (current != nullptr) {
+        if (current->commandCode == commandCode) {
+            return current;
+        }
+        current = current->next;
+    }
+    return nullptr;
+}
+
+void Mirlib::clearCommandHandlers() {
+    CommandHandler *current = m_commandHandlers;
+    while (current != nullptr) {
+        CommandHandler *next = current->next;
+        delete current;
+        current = next;
+    }
+    m_commandHandlers = nullptr;
 }
 
 bool Mirlib::autoDetectGeneration(uint16_t targetAddress) {
@@ -401,8 +436,8 @@ bool Mirlib::handleServerPacket(const PacketData &packet) {
     }
 
     // Поиск обработчика команды
-    auto handlerIt = m_commandHandlers.find(packet.command);
-    if (handlerIt == m_commandHandlers.end()) {
+    CommandHandler *handler = findCommandHandler(packet.command);
+    if (!handler || !handler->handlerFunc) {
         setError("Нет обработчика для команды");
         return false;
     }
@@ -411,7 +446,7 @@ bool Mirlib::handleServerPacket(const PacketData &packet) {
     PacketData responsePacket;
 
     // Вызов обработчика команды
-    if (!handlerIt->second(packet, responsePacket)) {
+    if (!handler->handlerFunc(packet, responsePacket, handler->context)) {
         setError("Обработчик команды не сработал");
         return false;
     }
@@ -466,262 +501,272 @@ void Mirlib::debugPrintPacket(const PacketData &packet, const char *title) {
     }
 }
 
-void Mirlib::registerDefaultHandlers() {
-    // Регистрация обработчика команды Ping
-    registerCommandHandler(CMD_PING, [this](const PacketData &request, PacketData &response) -> bool {
-        PingCommand cmd;
-        cmd.setServerResponse(0x0100, m_deviceAddress); // Пример версии прошивки
+// Статические обработчики команд
+bool Mirlib::handlePingCommand(const PacketData &request, PacketData &response, void *context) {
+    Mirlib *mirlib = (Mirlib *)context;
 
-        uint8_t responseData[4];
-        size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
-                                                responseData, sizeof(responseData));
-        if (responseSize == 0) {
-            return false;
+    PingCommand cmd;
+    cmd.setServerResponse(0x0100, mirlib->m_deviceAddress); // Пример версии прошивки
+
+    uint8_t responseData[4];
+    size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
+                                            responseData, sizeof(responseData));
+    if (responseSize == 0) {
+        return false;
+    }
+
+    response.dataSize = responseSize;
+    memcpy(response.data, responseData, responseSize);
+    return true;
+}
+
+bool Mirlib::handleGetInfoCommand(const PacketData &request, PacketData &response, void *context) {
+    Mirlib *mirlib = (Mirlib *)context;
+
+    GetInfoCommand cmd;
+
+    // Создание ответа GetInfo по умолчанию на основе поколения сервера
+    GetInfoResponseBase info;
+
+    // Установка ID платы на основе поколения сервера
+    switch (mirlib->m_serverGeneration) {
+        case OLD_GENERATION:
+            info.boardId = 0x01; // Плата старого поколения
+            break;
+        case TRANSITION_GENERATION:
+            info.boardId = 0x07; // Плата переходного поколения
+            break;
+        case NEW_GENERATION:
+        default:
+            info.boardId = 0x09; // Плата нового поколения
+            break;
+    }
+
+    info.firmwareVersion = 0x0100;
+    info.firmwareCRC = 0x1234;
+    info.workTime = millis() / 1000;
+    info.sleepTime = 0;
+    info.groupId = 0;
+    info.flags = 0x80; // Поддержка 100A
+    info.activeTariffCRC = 0x5678;
+    info.plannedTariffCRC = 0x9ABC;
+    info.timeSinceCorrection = millis() / 1000;
+    info.reserve = 0;
+    info.interface1Type = 1;
+    info.interface2Type = 2;
+    info.interface3Type = 3;
+    info.interface4Type = 4;
+    info.batteryVoltage = 3300; // 3.3В в мВ
+
+    cmd.setServerResponse(info);
+
+    uint8_t responseData[31];
+    size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
+                                            responseData, sizeof(responseData));
+    if (responseSize == 0) {
+        return false;
+    }
+
+    response.dataSize = responseSize;
+    memcpy(response.data, responseData, responseSize);
+    return true;
+}
+
+bool Mirlib::handleReadDateTimeCommand(const PacketData &request, PacketData &response, void *context) {
+    ReadDateTimeCommand cmd;
+
+    ReadDateTimeResponse dateTime;
+    dateTime.seconds = (millis() / 1000) % 60;
+    dateTime.minutes = (millis() / 60000) % 60;
+    dateTime.hours = 14;
+    dateTime.dayOfWeek = 2; // Вторник
+    dateTime.day = 27;
+    dateTime.month = 5;
+    dateTime.year = 25; // 2025
+
+    cmd.setServerResponse(dateTime);
+
+    uint8_t responseData[7];
+    size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
+                                            responseData, sizeof(responseData));
+    if (responseSize == 0) {
+        return false;
+    }
+
+    response.dataSize = responseSize;
+    memcpy(response.data, responseData, responseSize);
+    return true;
+}
+
+bool Mirlib::handleReadStatusCommand(const PacketData &request, PacketData &response, void *context) {
+    Mirlib *mirlib = (Mirlib *)context;
+
+    ReadStatusCommand cmd;
+
+    // Определение поколения на основе настроек сервера
+    bool isOldGeneration = (mirlib->m_serverGeneration == OLD_GENERATION);
+
+    // Установка поколения для команды на основе поколения сервера
+    uint8_t boardId = 0x09; // По умолчанию новое поколение
+    switch (mirlib->m_serverGeneration) {
+        case OLD_GENERATION:
+            boardId = 0x01;
+            break;
+        case TRANSITION_GENERATION:
+            boardId = 0x07;
+            break;
+        case NEW_GENERATION:
+        default:
+            boardId = 0x09;
+            break;
+    }
+
+    cmd.setGeneration(boardId, 0x32);
+
+    if (cmd.isOldGeneration()) {
+        // Создание ответа старого поколения
+        ReadStatusResponseOld oldResponse;
+        oldResponse.totalEnergy = 12345678;
+        oldResponse.configByte.fromByte(0x03); // Пример конфигурации
+        oldResponse.divisionCoeff = 1;
+        oldResponse.roleCode = 0x32;
+        oldResponse.multiplicationCoeff = 1;
+        for (int i = 0; i < 4; i++) {
+            oldResponse.tariffValues[i] = 1000000 * (i + 1);
         }
-
-        response.dataSize = responseSize;
-        memcpy(response.data, responseData, responseSize);
-        return true;
-    });
-
-    // Регистрация обработчика команды GetInfo
-    registerCommandHandler(CMD_GET_INFO, [this](const PacketData &request, PacketData &response) -> bool {
-        GetInfoCommand cmd;
-
-        // Создание ответа GetInfo по умолчанию на основе поколения сервера
-        GetInfoResponseBase info;
-
-        // Установка ID платы на основе поколения сервера
-        switch (m_serverGeneration) {
-            case OLD_GENERATION:
-                info.boardId = 0x01; // Плата старого поколения
-                break;
-            case TRANSITION_GENERATION:
-                info.boardId = 0x07; // Плата переходного поколения
-                break;
-            case NEW_GENERATION:
-            default:
-                info.boardId = 0x09; // Плата нового поколения
-                break;
-        }
-
-        info.firmwareVersion = 0x0100;
-        info.firmwareCRC = 0x1234;
-        info.workTime = millis() / 1000;
-        info.sleepTime = 0;
-        info.groupId = 0;
-        info.flags = 0x80; // Поддержка 100A
-        info.activeTariffCRC = 0x5678;
-        info.plannedTariffCRC = 0x9ABC;
-        info.timeSinceCorrection = millis() / 1000;
-        info.reserve = 0;
-        info.interface1Type = 1;
-        info.interface2Type = 2;
-        info.interface3Type = 3;
-        info.interface4Type = 4;
-        info.batteryVoltage = 3300; // 3.3В в мВ
-
-        cmd.setServerResponse(info);
-
-        uint8_t responseData[31];
-        size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
-                                                responseData, sizeof(responseData));
-        if (responseSize == 0) {
-            return false;
-        }
-
-        response.dataSize = responseSize;
-        memcpy(response.data, responseData, responseSize);
-        return true;
-    });
-
-    // Регистрация обработчика команды ReadDateTime
-    registerCommandHandler(CMD_READ_DATE_TIME, [this](const PacketData &request, PacketData &response) -> bool {
-        ReadDateTimeCommand cmd;
-
-        ReadDateTimeResponse dateTime;
-        dateTime.seconds = (millis() / 1000) % 60;
-        dateTime.minutes = (millis() / 60000) % 60;
-        dateTime.hours = 14;
-        dateTime.dayOfWeek = 2; // Вторник
-        dateTime.day = 27;
-        dateTime.month = 5;
-        dateTime.year = 25; // 2025
-
-        cmd.setServerResponse(dateTime);
-
-        uint8_t responseData[7];
-        size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
-                                                responseData, sizeof(responseData));
-        if (responseSize == 0) {
-            return false;
-        }
-
-        response.dataSize = responseSize;
-        memcpy(response.data, responseData, responseSize);
-        return true;
-    });
-
-    // Регистрация обработчика команды ReadStatus
-    registerCommandHandler(CMD_READ_STATUS, [this](const PacketData &request, PacketData &response) -> bool {
-        ReadStatusCommand cmd;
-
-        // Определение поколения на основе настроек сервера
-        bool isOldGeneration = (m_serverGeneration == OLD_GENERATION);
-
-        // Установка поколения для команды на основе поколения сервера
-        uint8_t boardId = 0x09; // По умолчанию новое поколение
-        switch (m_serverGeneration) {
-            case OLD_GENERATION:
-                boardId = 0x01;
-                break;
-            case TRANSITION_GENERATION:
-                boardId = 0x07;
-                break;
-            case NEW_GENERATION:
-            default:
-                boardId = 0x09;
-                break;
-        }
-
-        cmd.setGeneration(boardId, 0x32);
-
-        if (cmd.isOldGeneration()) {
-            // Создание ответа старого поколения
-            ReadStatusResponseOld oldResponse;
-            oldResponse.totalEnergy = 12345678;
-            oldResponse.configByte.fromByte(0x03); // Пример конфигурации
-            oldResponse.divisionCoeff = 1;
-            oldResponse.roleCode = 0x32;
-            oldResponse.multiplicationCoeff = 1;
-            for (int i = 0; i < 4; i++) {
-                oldResponse.tariffValues[i] = 1000000 * (i + 1);
-            }
-            cmd.setServerResponseOld(oldResponse);
-        } else {
-            // Создание ответа нового поколения
-            ReadStatusResponseNew newResponse;
-            newResponse.energyType = ACTIVE_FORWARD;
-            if (request.dataSize > 0) {
-                newResponse.energyType = static_cast<EnergyType>(request.data[0]);
-            }
-            newResponse.configByte.fromByte(0x03);
-            newResponse.voltageTransformCoeff = 1;
-            newResponse.currentTransformCoeff = 1;
-            newResponse.totalFull = 87654321;
-            newResponse.totalActive = 87654321;
-            for (int i = 0; i < 4; i++) {
-                newResponse.tariffValues[i] = 2000000 * (i + 1);
-            }
-            cmd.setServerResponseNew(newResponse);
-        }
-
-        uint8_t responseData[31];
-        size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
-                                                responseData, sizeof(responseData));
-        if (responseSize == 0) {
-            return false;
-        }
-
-        response.dataSize = responseSize;
-        memcpy(response.data, responseData, responseSize);
-        return true;
-    });
-
-    // Регистрация обработчика команды ReadInstantValue
-    registerCommandHandler(CMD_READ_INSTANT_VALUE, [this](const PacketData &request, PacketData &response) -> bool {
-        // Старое поколение не поддерживает эту команду
-        if (m_serverGeneration == OLD_GENERATION) {
-            setError("ReadInstantValue не поддерживается старым поколением");
-            return false;
-        }
-
-        ReadInstantValueCommand cmd;
-
-        // Определение поколения и ID платы на основе настроек сервера
-        uint8_t boardId;
-        switch (m_serverGeneration) {
-            case TRANSITION_GENERATION:
-                boardId = 0x07; // Плата переходного поколения
-                break;
-            case NEW_GENERATION:
-            default:
-                boardId = 0x09; // Плата нового поколения
-                break;
-        }
-
-        cmd.setGeneration(boardId, 0x32);
-
-        // Разбор запроса для получения группы параметров
-        ParameterGroup group = GROUP_BASIC; // По умолчанию
+        cmd.setServerResponseOld(oldResponse);
+    } else {
+        // Создание ответа нового поколения
+        ReadStatusResponseNew newResponse;
+        newResponse.energyType = ACTIVE_FORWARD;
         if (request.dataSize > 0) {
-            group = static_cast<ParameterGroup>(request.data[0]);
+            newResponse.energyType = static_cast<EnergyType>(request.data[0]);
         }
-        cmd.setRequest(group);
+        newResponse.configByte.fromByte(0x03);
+        newResponse.voltageTransformCoeff = 1;
+        newResponse.currentTransformCoeff = 1;
+        newResponse.totalFull = 87654321;
+        newResponse.totalActive = 87654321;
+        for (int i = 0; i < 4; i++) {
+            newResponse.tariffValues[i] = 2000000 * (i + 1);
+        }
+        cmd.setServerResponseNew(newResponse);
+    }
 
-        if (cmd.isTransitionGeneration()) {
-            // Создание ответа переходного поколения
-            ReadInstantValueResponseTransition transResponse;
-            transResponse.group = group;
-            transResponse.voltageTransformCoeff = 1;
-            transResponse.currentTransformCoeff = 5; // Трансформация 5A
-            transResponse.activePower = 1234; // Пример: 12.34 кВт
-            transResponse.reactivePower = 567; // Пример: 5.67 квар
-            transResponse.frequency = 5000; // Пример: 50.00 Гц
-            transResponse.cosPhi = 850; // Пример: cos φ = 0.850
-            transResponse.voltageA = 23000; // Пример: 230.00 В
-            transResponse.voltageB = 23100; // Пример: 231.00 В
-            transResponse.voltageC = 22900; // Пример: 229.00 В
+    uint8_t responseData[31];
+    size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
+                                            responseData, sizeof(responseData));
+    if (responseSize == 0) {
+        return false;
+    }
 
-            // Проверка поддержки 100A (из флагов или конфигурации)
-            transResponse.is100ASupport = true; // Предполагаем поддержку 100A для примера
+    response.dataSize = responseSize;
+    memcpy(response.data, responseData, responseSize);
+    return true;
+}
 
-            if (transResponse.is100ASupport) {
-                // 3-байтные токи (разделить на 1000 для А)
-                transResponse.currentA = 5350; // Пример: 5.350 А
-                transResponse.currentB = 5420; // Пример: 5.420 А
-                transResponse.currentC = 5280; // Пример: 5.280 А
-            } else {
-                // 2-байтные токи (разделить на 1000 для А)
-                transResponse.currentA = 5350; // Пример: 5.350 А
-                transResponse.currentB = 5420; // Пример: 5.420 А
-                transResponse.currentC = 5280; // Пример: 5.280 А
-            }
+bool Mirlib::handleReadInstantValueCommand(const PacketData &request, PacketData &response, void *context) {
+    Mirlib *mirlib = (Mirlib *)context;
 
-            cmd.setServerResponseTransition(transResponse);
-        } else if (cmd.isNewGeneration()) {
-            // Создание ответа нового поколения
-            ReadInstantValueResponseNewBasic newResponse;
-            newResponse.group = group;
-            newResponse.voltageTransformCoeff = 1;
-            newResponse.currentTransformCoeff = 5; // Трансформация 5A
-            newResponse.activePower = 12340; // Пример: 12.340 кВт (3-байтное значение)
-            newResponse.reactivePower = 5670; // Пример: 5.670 квар (3-байтное значение)
-            newResponse.frequency = 5000; // Пример: 50.00 Гц
-            newResponse.cosPhi = 850; // Пример: cos φ = 0.850
-            newResponse.voltageA = 23000; // Пример: 230.00 В
-            newResponse.voltageB = 23100; // Пример: 231.00 В
-            newResponse.voltageC = 22900; // Пример: 229.00 В
+    // Старое поколение не поддерживает эту команду
+    if (mirlib->m_serverGeneration == OLD_GENERATION) {
+        return false;
+    }
 
-            // 3-байтные токи для нового поколения (разделить на 1000 для А)
-            newResponse.currentA = 5350; // Пример: 5.350 А
-            newResponse.currentB = 5420; // Пример: 5.420 А
-            newResponse.currentC = 5280; // Пример: 5.280 А
+    ReadInstantValueCommand cmd;
 
-            cmd.setServerResponseNewBasic(newResponse);
+    // Определение поколения и ID платы на основе настроек сервера
+    uint8_t boardId;
+    switch (mirlib->m_serverGeneration) {
+        case TRANSITION_GENERATION:
+            boardId = 0x07; // Плата переходного поколения
+            break;
+        case NEW_GENERATION:
+        default:
+            boardId = 0x09; // Плата нового поколения
+            break;
+    }
+
+    cmd.setGeneration(boardId, 0x32);
+
+    // Разбор запроса для получения группы параметров
+    ParameterGroup group = GROUP_BASIC; // По умолчанию
+    if (request.dataSize > 0) {
+        group = static_cast<ParameterGroup>(request.data[0]);
+    }
+    cmd.setRequest(group);
+
+    if (cmd.isTransitionGeneration()) {
+        // Создание ответа переходного поколения
+        ReadInstantValueResponseTransition transResponse;
+        transResponse.group = group;
+        transResponse.voltageTransformCoeff = 1;
+        transResponse.currentTransformCoeff = 5; // Трансформация 5A
+        transResponse.activePower = 1234; // Пример: 12.34 кВт
+        transResponse.reactivePower = 567; // Пример: 5.67 квар
+        transResponse.frequency = 5000; // Пример: 50.00 Гц
+        transResponse.cosPhi = 850; // Пример: cos φ = 0.850
+        transResponse.voltageA = 23000; // Пример: 230.00 В
+        transResponse.voltageB = 23100; // Пример: 231.00 В
+        transResponse.voltageC = 22900; // Пример: 229.00 В
+
+        // Проверка поддержки 100A (из флагов или конфигурации)
+        transResponse.is100ASupport = true; // Предполагаем поддержку 100A для примера
+
+        if (transResponse.is100ASupport) {
+            // 3-байтные токи (разделить на 1000 для А)
+            transResponse.currentA = 5350; // Пример: 5.350 А
+            transResponse.currentB = 5420; // Пример: 5.420 А
+            transResponse.currentC = 5280; // Пример: 5.280 А
+        } else {
+            // 2-байтные токи (разделить на 1000 для А)
+            transResponse.currentA = 5350; // Пример: 5.350 А
+            transResponse.currentB = 5420; // Пример: 5.420 А
+            transResponse.currentC = 5280; // Пример: 5.280 А
         }
 
-        uint8_t responseData[32]; // Максимальный размер для любого поколения
-        size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
-                                                responseData, sizeof(responseData));
-        if (responseSize == 0) {
-            return false;
-        }
+        cmd.setServerResponseTransition(transResponse);
+    } else if (cmd.isNewGeneration()) {
+        // Создание ответа нового поколения
+        ReadInstantValueResponseNewBasic newResponse;
+        newResponse.group = group;
+        newResponse.voltageTransformCoeff = 1;
+        newResponse.currentTransformCoeff = 5; // Трансформация 5A
+        newResponse.activePower = 12340; // Пример: 12.340 кВт (3-байтное значение)
+        newResponse.reactivePower = 5670; // Пример: 5.670 квар (3-байтное значение)
+        newResponse.frequency = 5000; // Пример: 50.00 Гц
+        newResponse.cosPhi = 850; // Пример: cos φ = 0.850
+        newResponse.voltageA = 23000; // Пример: 230.00 В
+        newResponse.voltageB = 23100; // Пример: 231.00 В
+        newResponse.voltageC = 22900; // Пример: 229.00 В
 
-        response.dataSize = responseSize;
-        memcpy(response.data, responseData, responseSize);
-        return true;
-    });
+        // 3-байтные токи для нового поколения (разделить на 1000 для А)
+        newResponse.currentA = 5350; // Пример: 5.350 А
+        newResponse.currentB = 5420; // Пример: 5.420 А
+        newResponse.currentC = 5280; // Пример: 5.280 А
+
+        cmd.setServerResponseNewBasic(newResponse);
+    }
+
+    uint8_t responseData[32]; // Максимальный размер для любого поколения
+    size_t responseSize = cmd.handleRequest(request.data, request.dataSize,
+                                            responseData, sizeof(responseData));
+    if (responseSize == 0) {
+        return false;
+    }
+
+    response.dataSize = responseSize;
+    memcpy(response.data, responseData, responseSize);
+    return true;
+}
+
+void Mirlib::registerDefaultHandlers() {
+    // Регистрация обработчиков команд по умолчанию
+    registerCommandHandler(CMD_PING, handlePingCommand, this);
+    registerCommandHandler(CMD_GET_INFO, handleGetInfoCommand, this);
+    registerCommandHandler(CMD_READ_DATE_TIME, handleReadDateTimeCommand, nullptr);
+    registerCommandHandler(CMD_READ_STATUS, handleReadStatusCommand, this);
+    registerCommandHandler(CMD_READ_INSTANT_VALUE, handleReadInstantValueCommand, this);
 }
 
 // Дополнительные утилитарные методы для диагностики CC1101

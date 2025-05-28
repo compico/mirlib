@@ -2,8 +2,6 @@
 #define ELECTRIC_METER_PROTOCOL_H
 
 #include <Arduino.h>
-#include <map>
-#include <functional>
 #include <ELECHOUSE_CC1101_SRC_DRV.h>
 #include "ProtocolTypes.h"
 #include "ProtocolUtils.h"
@@ -13,6 +11,21 @@
 #include "Commands/ReadInstantValueCommand.h"
 #include "Commands/ReadDateTimeCommand.h"
 #include "Commands/GetInfoCommand.h"
+
+// Forward declaration
+struct CommandHandler;
+
+/**
+ * @brief Простая структура для хранения обработчиков команд без STL
+ */
+struct CommandHandler {
+    uint8_t commandCode;
+    bool (*handlerFunc)(const PacketData &request, PacketData &response, void *context);
+    void *context;
+    CommandHandler *next;
+
+    CommandHandler() : commandCode(0), handlerFunc(nullptr), context(nullptr), next(nullptr) {}
+};
 
 /**
  * @brief Основной класс для связи по протоколу электросчетчиков
@@ -49,6 +62,11 @@ public:
      * @param deviceAddress Адрес устройства (0x0001-0xFDE8 для счетчиков, 0xFFFF для клиента)
      */
     Mirlib(Mode mode = CLIENT, uint16_t deviceAddress = 0xFFFF);
+
+    /**
+     * @brief Деструктор
+     */
+    ~Mirlib();
 
     /**
      * @brief Инициализация протокола и CC1101 с оригинальными настройками
@@ -115,10 +133,12 @@ public:
     /**
      * @brief Зарегистрировать обработчик команд для режима сервера
      * @param commandCode Код команды (0x01, 0x05, 0x30, и т.д.)
-     * @param handler Функция обработчика команды
+     * @param handlerFunc Функция обработчика команды
+     * @param context Контекст для передачи в обработчик
      */
     void registerCommandHandler(uint8_t commandCode,
-                                std::function<bool(const PacketData &, PacketData &)> handler);
+                                bool (*handlerFunc)(const PacketData &, PacketData &, void *),
+                                void *context = nullptr);
 
     /**
      * @brief Автоопределение поколения устройства с помощью команды GetInfo
@@ -161,8 +181,8 @@ private:
     int m_gdo0Pin; ///< Пин GDO0 для использования в функциях
     char m_lastError[128];
 
-    // Обработчики команд для режима сервера
-    std::map<uint8_t, std::function<bool(const PacketData &, PacketData &)> > m_commandHandlers;
+    // Связный список обработчиков команд вместо std::map
+    CommandHandler *m_commandHandlers;
 
     /**
      * @brief Инициализация CC1101 с оригинальными настройками rfSettings
@@ -203,6 +223,18 @@ private:
     bool sendResponse(const PacketData &originalPacket, const PacketData &responseData);
 
     /**
+     * @brief Найти обработчик команды
+     * @param commandCode Код команды
+     * @return Указатель на обработчик или nullptr
+     */
+    CommandHandler *findCommandHandler(uint8_t commandCode);
+
+    /**
+     * @brief Освободить память обработчиков
+     */
+    void clearCommandHandlers();
+
+    /**
      * @brief Зарегистрировать обработчики команд по умолчанию
      */
     void registerDefaultHandlers();
@@ -225,6 +257,13 @@ private:
      * @param title Заголовок для отладочного вывода
      */
     void debugPrintPacket(const PacketData &packet, const char *title);
+
+    // Статические обработчики для команд по умолчанию
+    static bool handlePingCommand(const PacketData &request, PacketData &response, void *context);
+    static bool handleGetInfoCommand(const PacketData &request, PacketData &response, void *context);
+    static bool handleReadDateTimeCommand(const PacketData &request, PacketData &response, void *context);
+    static bool handleReadStatusCommand(const PacketData &request, PacketData &response, void *context);
+    static bool handleReadInstantValueCommand(const PacketData &request, PacketData &response, void *context);
 };
 
 #endif // ELECTRIC_METER_PROTOCOL_H
