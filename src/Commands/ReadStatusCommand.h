@@ -93,7 +93,10 @@ struct ReadStatusResponseOld {
         roleCode = data[index++];
 
         // Multiplication coefficient (3 bytes, but we store as uint32_t)
-        multiplicationCoeff = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+        // FIXED: explicit cast to uint32_t to avoid shift overflow warning
+        multiplicationCoeff = (uint32_t)data[index] |
+                             ((uint32_t)data[index + 1] << 8) |
+                             ((uint32_t)data[index + 2] << 16);
         index += 3;
 
         // Tariff values (16 bytes = 4 x 4 bytes)

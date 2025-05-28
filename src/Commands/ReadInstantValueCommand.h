@@ -103,11 +103,18 @@ struct ReadInstantValueResponseTransition {
 
         if (is100ASupport) {
             // 3-byte currents for 100A support
-            currentA = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+            // FIXED: explicit cast to uint32_t to avoid shift overflow warning
+            currentA = (uint32_t)data[index] |
+                      ((uint32_t)data[index + 1] << 8) |
+                      ((uint32_t)data[index + 2] << 16);
             index += 3;
-            currentB = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+            currentB = (uint32_t)data[index] |
+                      ((uint32_t)data[index + 1] << 8) |
+                      ((uint32_t)data[index + 2] << 16);
             index += 3;
-            currentC = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+            currentC = (uint32_t)data[index] |
+                      ((uint32_t)data[index + 1] << 8) |
+                      ((uint32_t)data[index + 2] << 16);
             index += 3;
         } else {
             // 2-byte currents
@@ -245,9 +252,14 @@ struct ReadInstantValueResponseNewBasic {
         index += 2;
 
         // 3-byte values for power
-        activePower = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+        // FIXED: explicit cast to uint32_t to avoid shift overflow warning
+        activePower = (uint32_t)data[index] |
+                     ((uint32_t)data[index + 1] << 8) |
+                     ((uint32_t)data[index + 2] << 16);
         index += 3;
-        reactivePower = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+        reactivePower = (uint32_t)data[index] |
+                       ((uint32_t)data[index + 1] << 8) |
+                       ((uint32_t)data[index + 2] << 16);
         index += 3;
 
         frequency = ProtocolUtils::bytesToUint16(&data[index]);
@@ -262,11 +274,18 @@ struct ReadInstantValueResponseNewBasic {
         index += 2;
 
         // 3-byte currents
-        currentA = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+        // FIXED: explicit cast to uint32_t to avoid shift overflow warning
+        currentA = (uint32_t)data[index] |
+                  ((uint32_t)data[index + 1] << 8) |
+                  ((uint32_t)data[index + 2] << 16);
         index += 3;
-        currentB = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+        currentB = (uint32_t)data[index] |
+                  ((uint32_t)data[index + 1] << 8) |
+                  ((uint32_t)data[index + 2] << 16);
         index += 3;
-        currentC = data[index] | (data[index + 1] << 8) | (data[index + 2] << 16);
+        currentC = (uint32_t)data[index] |
+                  ((uint32_t)data[index + 1] << 8) |
+                  ((uint32_t)data[index + 2] << 16);
         index += 3;
 
         return true;
