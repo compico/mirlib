@@ -1,6 +1,7 @@
 #include "ProtocolUtils.h"
 
-uint8_t ProtocolUtils::calculateCRC8(const uint8_t *data, size_t length) {
+uint8_t ProtocolUtils::calculateCRC8(const uint8_t *data, size_t length)
+{
     uint8_t crc = ProtocolConstants::CRC_INITIAL;
 
     for (size_t i = 0; i < length; i++) {
@@ -19,9 +20,13 @@ uint8_t ProtocolUtils::calculateCRC8(const uint8_t *data, size_t length) {
     return crc;
 }
 
-size_t ProtocolUtils::byteStuffing(const uint8_t *input, size_t inputSize,
-                                   uint8_t *output, size_t outputMaxSize) {
-    if (!input || !output || inputSize == 0) {
+size_t ProtocolUtils::byteStuffing(
+    const uint8_t *input,
+    const size_t inputSize,
+    uint8_t *output,
+    const size_t outputMaxSize
+) {
+    if ((input == nullptr) || (output == nullptr) || inputSize == 0) {
         return 0;
     }
 
@@ -33,17 +38,21 @@ size_t ProtocolUtils::byteStuffing(const uint8_t *input, size_t inputSize,
             return 0; // Not enough space
         }
 
-        uint8_t currentByte = input[i];
+        uint8_t const currentByte = input[i];
 
         if (currentByte == 0x55) {
             // Replace 0x55 with 0x73 0x11
             output[outputIndex++] = ProtocolConstants::STUFF_MARKER;
-            if (outputIndex >= outputMaxSize) return 0;
+            if (outputIndex >= outputMaxSize) {
+                return 0;
+            }
             output[outputIndex++] = ProtocolConstants::STUFF_0x55;
         } else if (currentByte == 0x73) {
             // Replace 0x73 with 0x73 0x22
             output[outputIndex++] = ProtocolConstants::STUFF_MARKER;
-            if (outputIndex >= outputMaxSize) return 0;
+            if (outputIndex >= outputMaxSize) {
+                return 0;
+            }
             output[outputIndex++] = ProtocolConstants::STUFF_0x73;
         } else {
             // Regular byte, copy as is
@@ -54,9 +63,13 @@ size_t ProtocolUtils::byteStuffing(const uint8_t *input, size_t inputSize,
     return outputIndex;
 }
 
-size_t ProtocolUtils::byteUnstuffing(const uint8_t *input, size_t inputSize,
-                                     uint8_t *output, size_t outputMaxSize) {
-    if (!input || !output || inputSize == 0) {
+size_t ProtocolUtils::byteUnstuffing(
+    const uint8_t *input,
+    size_t inputSize,
+    uint8_t *output,
+    size_t outputMaxSize
+) {
+    if ((input == nullptr) || (output == nullptr) || inputSize == 0) {
         return 0;
     }
 
@@ -64,10 +77,10 @@ size_t ProtocolUtils::byteUnstuffing(const uint8_t *input, size_t inputSize,
     size_t inputIndex = 0;
 
     while (inputIndex < inputSize && outputIndex < outputMaxSize) {
-        uint8_t currentByte = input[inputIndex++];
+        uint8_t const currentByte = input[inputIndex++];
 
         if (currentByte == ProtocolConstants::STUFF_MARKER && inputIndex < inputSize) {
-            uint8_t nextByte = input[inputIndex++];
+            uint8_t const nextByte = input[inputIndex++];
 
             if (nextByte == ProtocolConstants::STUFF_0x55) {
                 // 0x73 0x11 -> 0x55
@@ -154,7 +167,7 @@ bool ProtocolUtils::packPacket(PacketData &packet) {
 bool ProtocolUtils::unpackPacket(const uint8_t *rawData, size_t rawSize, PacketData &packet) {
     packet.clear();
 
-    if (!rawData || rawSize < ProtocolConstants::MIN_PACKET_SIZE) {
+    if ((rawData == nullptr) || rawSize < ProtocolConstants::MIN_PACKET_SIZE) {
         return false;
     }
 
@@ -167,11 +180,11 @@ bool ProtocolUtils::unpackPacket(const uint8_t *rawData, size_t rawSize, PacketD
 
     // Extract stuffed data (without start/stop bytes)
     const uint8_t *stuffedData = rawData + 2;
-    size_t stuffedSize = rawSize - 3;
+    size_t const stuffedSize = rawSize - 3;
 
     // Perform reverse byte stuffing
     uint8_t unstuffedData[ProtocolConstants::MAX_PACKET_SIZE];
-    size_t unstuffedSize = byteUnstuffing(stuffedData, stuffedSize, unstuffedData, sizeof(unstuffedData));
+    size_t const unstuffedSize = byteUnstuffing(stuffedData, stuffedSize, unstuffedData, sizeof(unstuffedData));
 
     if (unstuffedSize < 8) {
         // Minimum: params(1) + reserve(1) + dest(2) + src(2) + cmd(1) + pass/stat(4) + crc(1)
@@ -320,14 +333,14 @@ bool ProtocolUtils::validatePacket(const PacketData &packet) {
 
 void ProtocolUtils::printPacketHex(const PacketData &packet, const char *title) {
     Serial.print(title);
-    Serial.print(": ");
+    Serial.print(F(": "));
     printHex(packet.rawPacket, packet.rawSize, "");
 }
 
 void ProtocolUtils::printHex(const uint8_t *data, size_t size, const char *title) {
     if (title && strlen(title) > 0) {
         Serial.print(title);
-        Serial.print(": ");
+        Serial.print(F(": "));
     }
 
     for (size_t i = 0; i < size; i++) {

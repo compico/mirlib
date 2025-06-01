@@ -115,7 +115,6 @@ struct ReadInstantValueResponseTransition {
             currentC = (uint32_t)data[index] |
                       ((uint32_t)data[index + 1] << 8) |
                       ((uint32_t)data[index + 2] << 16);
-            index += 3;
         } else {
             // 2-byte currents
             currentA = ProtocolUtils::bytesToUint16(&data[index]);
@@ -123,7 +122,6 @@ struct ReadInstantValueResponseTransition {
             currentB = ProtocolUtils::bytesToUint16(&data[index]);
             index += 2;
             currentC = ProtocolUtils::bytesToUint16(&data[index]);
-            index += 2;
         }
 
         return true;

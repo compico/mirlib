@@ -63,7 +63,9 @@ set(SOURCES
 
 # Header files
 set(HEADERS
-        src/Mirlib.h
+        src/MirlibClient.h
+        src/MirlibServer.h
+        src/MirlibErrors.h
         src/ProtocolTypes.h
         src/ProtocolUtils.h
         src/Commands/BaseCommand.h

@@ -15,7 +15,7 @@
  * GDO2 -> GPIO 4 (опционально)
  */
 
-#include <Mirlib.h>
+#include <MirlibClient.h>
 
 // Конфигурация
 const int CS_PIN = 5;
@@ -27,7 +27,7 @@ struct MeterInfo {
     uint16_t address;
     String name;
     uint32_t password;
-    Mirlib::Generation generation;
+    MirlibClient::Generation generation;
     bool isOnline;
     unsigned long lastSuccessfulPoll;
     uint32_t pollCount;
@@ -44,7 +44,7 @@ MeterInfo meters[] = {
 const int METER_COUNT = sizeof(meters) / sizeof(meters[0]);
 
 // Инициализация протокола в клиентском режиме
-Mirlib protocol(Mirlib::CLIENT, 0xFFFF);
+MirlibClient protocol(0xFFFF);
 
 // Настройки опроса
 const unsigned long POLL_INTERVAL = 30000; // Интервал между циклами опроса (30 сек)
@@ -72,8 +72,6 @@ void setup() {
 
     Serial.println("✅ CC1101 инициализирован");
 
-    // Настройка протокола
-    protocol.setDebugMode(false); // Отключаем подробную отладку для чистоты вывода
     protocol.setTimeout(METER_TIMEOUT);
 
     Serial.println("📋 Список счетчиков для опроса:");
@@ -151,13 +149,13 @@ bool determineGeneration(int meterIndex) {
         GenerationInfo genInfo = infoCmd.getGenerationInfo();
 
         if (genInfo.isOldGeneration) {
-            meters[meterIndex].generation = Mirlib::OLD_GENERATION;
+            meters[meterIndex].generation = MirlibClient::OLD_GENERATION;
         } else if (genInfo.isTransitionGeneration) {
-            meters[meterIndex].generation = Mirlib::TRANSITION_GENERATION;
+            meters[meterIndex].generation = MirlibClient::TRANSITION_GENERATION;
         } else if (genInfo.isNewGeneration) {
-            meters[meterIndex].generation = Mirlib::NEW_GENERATION;
+            meters[meterIndex].generation = MirlibClient::NEW_GENERATION;
         } else {
-            meters[meterIndex].generation = Mirlib::UNKNOWN;
+            meters[meterIndex].generation = MirlibClient::UNKNOWN;
             return false;
         }
 
@@ -194,7 +192,7 @@ void pollMeter(int index) {
         readStatus(index);
 
         // 4. Чтение мгновенных значений (если поддерживается)
-        if (meter.generation != Mirlib::OLD_GENERATION) {
+        if (meter.generation != MirlibClient::OLD_GENERATION) {
             readInstantValues(index);
         }
 
@@ -236,7 +234,7 @@ void readStatus(int index) {
     ReadStatusCommand cmd;
 
     // Настройка команды в зависимости от поколения
-    if (meter.generation == Mirlib::OLD_GENERATION) {
+    if (meter.generation == MirlibClient::OLD_GENERATION) {
         cmd.setGeneration(0x01, 0x30); // Пример ID и роли для старого поколения
     } else {
         cmd.setGeneration(0x09, 0x32); // Пример ID и роли для нового поколения
@@ -311,9 +309,9 @@ void printMeterStatistics() {
 
 String getGenerationName(Mirlib::Generation gen) {
     switch (gen) {
-        case Mirlib::OLD_GENERATION: return "Старое";
-        case Mirlib::TRANSITION_GENERATION: return "Переходное";
-        case Mirlib::NEW_GENERATION: return "Новое";
+        case MirlibClient::OLD_GENERATION: return "Старое";
+        case MirlibClient::TRANSITION_GENERATION: return "Переходное";
+        case MirlibClient::NEW_GENERATION: return "Новое";
         default: return "Неизвестно";
     }
 }

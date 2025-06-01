@@ -15,7 +15,7 @@
  * GDO2 -> GPIO 4 (опционально)
  */
 
-#include <Mirlib.h>
+#include <MirlibClient.h>
 
 // Конфигурация
 const int CS_PIN = 5; // Пин Chip Select для CC1101
@@ -25,7 +25,7 @@ const uint16_t METER_ADDRESS = 0x1234; // Адрес счетчика для о�
 const uint32_t METER_PASSWORD = 0x12345678; // Пароль счетчика (если требуется)
 
 // Инициализация протокола в клиентском режиме
-Mirlib protocol(Mirlib::CLIENT, 0xFFFF);
+MirlibClient protocol(0xFFFF);
 
 void setup() {
     Serial.begin(115200);
@@ -40,15 +40,13 @@ void setup() {
         Serial.println("Проверьте подключение модуля:");
         Serial.println("- Подключение проводов SPI");
         Serial.println("- Пин CS = " + String(CS_PIN));
-        while (1) {
+        while (true) {
             delay(1000);
         }
     }
 
     Serial.println("✅ CC1101 инициализирован успешно");
 
-    // Включение отладочного режима
-    protocol.setDebugMode(true);
     protocol.setTimeout(5000);
 
     Serial.println("🔍 Начинаем опрос счетчика по адресу 0x" + String(METER_ADDRESS, HEX));

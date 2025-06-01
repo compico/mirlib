@@ -15,7 +15,7 @@
  * GDO2 -> GPIO 4 (опционально)
  */
 
-#include <Mirlib.h>
+#include <MirlibClient.h>
 
 // Конфигурация
 const int CS_PIN = 5;
@@ -30,7 +30,7 @@ const uint16_t SCAN_ADDRESSES[] = {
 const int SCAN_COUNT = sizeof(SCAN_ADDRESSES) / sizeof(SCAN_ADDRESSES[0]);
 
 // Инициализация протокола
-Mirlib protocol(Mirlib::CLIENT, 0xFFFF);
+MirlibClient protocol(0xFFFF);
 
 // Структура для хранения информации об обнаруженных устройствах
 struct DeviceInfo {
@@ -38,7 +38,7 @@ struct DeviceInfo {
     bool isOnline;
     uint8_t boardId;
     uint16_t firmwareVersion;
-    Mirlib::Generation generation;
+    MirlibClient::Generation generation;
     String generationName;
     bool supports100A;
     bool hasStreetLighting;
@@ -66,7 +66,6 @@ void setup() {
     Serial.println("✅ CC1101 инициализирован");
 
     // Настройка протокола
-    protocol.setDebugMode(false);
     protocol.setTimeout(2000); // Короткий таймаут для быстрого сканирования
 
     Serial.println("\n🔎 Начинаем сканирование и определение поколений...");
@@ -105,7 +104,7 @@ void scanDevices() {
         device.isOnline = false;
         device.boardId = 0;
         device.firmwareVersion = 0;
-        device.generation = Mirlib::UNKNOWN;
+        device.generation = MirlibClient::UNKNOWN;
         device.generationName = "Неизвестно";
         device.supports100A = false;
         device.hasStreetLighting = false;
@@ -154,16 +153,16 @@ bool determineGeneration(DeviceInfo &device) {
         GenerationInfo genInfo = infoCmd.getGenerationInfo();
 
         if (genInfo.isOldGeneration) {
-            device.generation = Mirlib::OLD_GENERATION;
+            device.generation = MirlibClient::OLD_GENERATION;
             device.generationName = "Старое";
         } else if (genInfo.isTransitionGeneration) {
-            device.generation = Mirlib::TRANSITION_GENERATION;
+            device.generation = MirlibClient::TRANSITION_GENERATION;
             device.generationName = "Переходное";
         } else if (genInfo.isNewGeneration) {
-            device.generation = Mirlib::NEW_GENERATION;
+            device.generation = MirlibClient::NEW_GENERATION;
             device.generationName = "Новое";
         } else {
-            device.generation = Mirlib::UNKNOWN;
+            device.generation = MirlibClient::UNKNOWN;
             device.generationName = "Неизвестно";
             return false;
         }
@@ -190,11 +189,11 @@ void analyzeDevices() {
 
     for (const auto &device: discoveredDevices) {
         switch (device.generation) {
-            case Mirlib::OLD_GENERATION: oldCount++;
+            case MirlibClient::OLD_GENERATION: oldCount++;
                 break;
-            case Mirlib::TRANSITION_GENERATION: transitionCount++;
+            case MirlibClient::TRANSITION_GENERATION: transitionCount++;
                 break;
-            case Mirlib::NEW_GENERATION: newCount++;
+            case MirlibClient::NEW_GENERATION: newCount++;
                 break;
             default: unknownCount++;
                 break;
@@ -235,11 +234,11 @@ void analyzeDevices() {
         String lighting = device.hasStreetLighting ? "Да       " : "Нет      ";
 
         String features = "";
-        if (device.generation == Mirlib::OLD_GENERATION) {
+        if (device.generation == MirlibClient::OLD_GENERATION) {
             features = "Базовая функциональность";
-        } else if (device.generation == Mirlib::TRANSITION_GENERATION) {
+        } else if (device.generation == MirlibClient::TRANSITION_GENERATION) {
             features = "Мгновенные значения, трансформация";
-        } else if (device.generation == Mirlib::NEW_GENERATION) {
+        } else if (device.generation == MirlibClient::NEW_GENERATION) {
             features = "Полная функциональность, множественные интерфейсы";
         }
 
@@ -356,7 +355,7 @@ void testDeviceCommands(DeviceInfo &device) {
     // 4. ReadStatus (поддерживается всеми, но формат разный)
     ReadStatusCommand statusCmd;
     statusCmd.setGeneration(device.boardId, 0x32);
-    if (device.generation != Mirlib::OLD_GENERATION) {
+    if (device.generation != MirlibClient::OLD_GENERATION) {
         statusCmd.setRequest(ACTIVE_FORWARD);
     }
     device.supportsReadStatus = protocol.sendCommand(&statusCmd, device.address);
@@ -364,7 +363,7 @@ void testDeviceCommands(DeviceInfo &device) {
         "      ReadStatus: " + String(device.supportsReadStatus ? "✅ Поддерживается" : "❌ Не поддерживается"));
 
     // 5. ReadInstantValue (только переходное и новое поколения)
-    if (device.generation != Mirlib::OLD_GENERATION) {
+    if (device.generation != MirlibClient::OLD_GENERATION) {
         ReadInstantValueCommand instantCmd;
         instantCmd.setGeneration(device.boardId, 0x32);
         instantCmd.setRequest(GROUP_BASIC);
@@ -399,7 +398,7 @@ void printCompatibilitySummary() {
 
     for (const auto &device: discoveredDevices) {
         switch (device.generation) {
-            case Mirlib::OLD_GENERATION:
+            case MirlibClient::OLD_GENERATION:
                 ping.oldTotal++;
                 getInfo.oldTotal++;
                 dateTime.oldTotal++;
@@ -411,7 +410,7 @@ void printCompatibilitySummary() {
                 if (device.supportsReadStatus) readStatus.oldSupported++;
                 if (device.supportsReadInstantValue) instantValue.oldSupported++;
                 break;
-            case Mirlib::TRANSITION_GENERATION:
+            case MirlibClient::TRANSITION_GENERATION:
                 ping.transitionTotal++;
                 getInfo.transitionTotal++;
                 dateTime.transitionTotal++;
@@ -423,7 +422,7 @@ void printCompatibilitySummary() {
                 if (device.supportsReadStatus) readStatus.transitionSupported++;
                 if (device.supportsReadInstantValue) instantValue.transitionSupported++;
                 break;
-            case Mirlib::NEW_GENERATION:
+            case MirlibClient::NEW_GENERATION:
                 ping.newTotal++;
                 getInfo.newTotal++;
                 dateTime.newTotal++;

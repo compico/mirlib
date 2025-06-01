@@ -20,7 +20,7 @@ struct ReadStatusRequest {
      * @brief Constructor for transition/new generation
      * @param type Energy type
      */
-    ReadStatusRequest(EnergyType type) : energyType(type) {
+    explicit ReadStatusRequest(EnergyType type) : energyType(type) {
     }
 
     /**

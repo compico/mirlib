@@ -15,7 +15,7 @@
  * GDO2 -> GPIO 4 (опционально)
  */
 
-#include <Mirlib.h>
+#include <MirlibServer.h>
 
 // Конфигурация
 const int CS_PIN = 5; // Пин Chip Select для CC1101
@@ -26,7 +26,7 @@ const uint32_t DEVICE_PASSWORD = 0x12345678; // Пароль счетчика
 const uint32_t DEVICE_STATUS = 0x00000000; // Статус устройства
 
 // Инициализация протокола в серверном режиме
-Mirlib protocol(Mirlib::SERVER, DEVICE_ADDRESS);
+MirlibServer protocol(DEVICE_ADDRESS);
 
 // Переменные для имитации счетчика
 unsigned long lastEnergyUpdate = 0;
@@ -52,21 +52,19 @@ void setup() {
         Serial.println("- VCC = 3.3V (НЕ 5V!)");
         Serial.println("- Подключение проводов SPI");
         Serial.println("- Пин CS = " + String(CS_PIN));
-        while (1) {
+        while (true) {
             delay(1000);
         }
     }
 
     Serial.println("✅ CC1101 инициализирован успешно");
 
-    // Настройка симулятора
-    protocol.setDebugMode(true);
     protocol.setPassword(DEVICE_PASSWORD);
     protocol.setStatus(DEVICE_STATUS);
 
     // Выбор поколения для имитации (можно изменить)
     // OLD_GENERATION, TRANSITION_GENERATION, NEW_GENERATION
-    protocol.setServerGeneration(Mirlib::NEW_GENERATION);
+    protocol.setServerGeneration(MirlibServer::NEW_GENERATION);
 
     // Регистрация дополнительных обработчиков команд
     setupCustomHandlers();
@@ -102,7 +100,8 @@ void setupCustomHandlers() {
     Serial.println("🔧 Настройка пользовательских обработчиков команд...");
 
     // Пример дополнительного обработчика для команды Ping
-    protocol.registerCommandHandler(CMD_PING, [](const PacketData &request, PacketData &response) -> bool {
+    protocol.registerCommandHandler(CMD_PING,
+    [](const PacketData &request, PacketData &response, void * /*context*/) -> bool {
         Serial.println("📡 Обработка команды Ping");
 
         PingCommand cmd;
@@ -183,15 +182,15 @@ void changeGeneration() {
 
     switch (currentGen) {
         case 0:
-            protocol.setServerGeneration(Mirlib::OLD_GENERATION);
+            protocol.setServerGeneration(MirlibServer::OLD_GENERATION);
             Serial.println("🔄 Переключено на СТАРОЕ поколение");
             break;
         case 1:
-            protocol.setServerGeneration(Mirlib::TRANSITION_GENERATION);
+            protocol.setServerGeneration(MirlibServer::TRANSITION_GENERATION);
             Serial.println("🔄 Переключено на ПЕРЕХОДНОЕ поколение");
             break;
         case 2:
-            protocol.setServerGeneration(Mirlib::NEW_GENERATION);
+            protocol.setServerGeneration(MirlibServer::NEW_GENERATION);
             Serial.println("🔄 Переключено на НОВОЕ поколение");
             break;
     }

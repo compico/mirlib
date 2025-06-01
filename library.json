@@ -1,6 +1,6 @@
 {
   "name": "Mirlib",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Library for communication with electric meters via CC1101 using custom protocol",
   "keywords": [
     "electric meter",
