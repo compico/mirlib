@@ -57,7 +57,9 @@ endif()
 
 # Source files
 set(SOURCES
-        src/Mirlib.cpp
+        src/MirlibBase.cpp
+        src/MirlibClient.cpp
+        src/MirlibServer.cpp
         src/ProtocolUtils.cpp
 )
 
@@ -66,6 +68,7 @@ set(HEADERS
         src/MirlibClient.h
         src/MirlibServer.h
         src/MirlibErrors.h
+        src/MirlibDebug.h
         src/ProtocolTypes.h
         src/ProtocolUtils.h
         src/Commands/BaseCommand.h
