@@ -19,12 +19,7 @@ bool MirlibBase::begin(int csPin, int gdo0Pin, int gdo2Pin) {
         m_gdo0Pin = gdo0Pin;
     }
 
-    // Устанавливаем пин GDO0
     ELECHOUSE_cc1101.setGDO0(m_gdo0Pin);
-
-    // Настройка SPI пинов (правильно - только 4 параметра: SCK, MISO, MOSI, SS)
-    // В большинстве случаев используются стандартные пины SPI, поэтому передаем только CS
-    ELECHOUSE_cc1101.setSpiPin(-1, -1, -1, csPin); // SCK, MISO, MOSI = -1 (стандартные), SS = csPin
 
     // Проверка подключения CC1101
     if (!ELECHOUSE_cc1101.getCC1101()) {
@@ -147,7 +142,7 @@ bool MirlibBase::sendPacketOriginalStyle(const PacketData &packet) {
     ELECHOUSE_cc1101.SendData(const_cast<uint8_t *>(packet.rawPacket), packet.rawSize);
 
     #ifdef MIRLIB_DEBUG
-        debugPrint("Пакет отправлен");
+        MIRLIB_DEBUG_PRINT("Пакет отправлен");
         char msg[50];
         snprintf(msg, sizeof(msg), "Размер пакета: %d байт", packet.rawSize);
         MIRLIB_DEBUG_PRINT(msg);
@@ -178,7 +173,7 @@ bool MirlibBase::receivePacketOriginalStyle(PacketData &packet, uint32_t timeout
 
             const int len = ELECHOUSE_cc1101.ReceiveData(buffer);
 
-            if (len > 0 && len <= ProtocolConstants::MAX_PACKET_SIZE) {
+            if (len > 0 && static_cast<size_t>(len) <= ProtocolConstants::MAX_PACKET_SIZE) {
                 #ifdef MIRLIB_DEBUG
                     char msg[50];
                     snprintf(msg, sizeof(msg), "Получен пакет, размер: %d байт", len);
@@ -231,7 +226,7 @@ bool MirlibBase::receivePacketOriginalStyle(PacketData &packet, uint32_t timeout
 void MirlibBase::setError(const ErrorCode code) {
     m_lastError = code;
     #ifdef MIRLIB_DEBUG
-        MIRLIB_DEBUG_PRINT_ERROR(code)
+        MIRLIB_DEBUG_PRINT_ERROR(code);
     #endif
 }
 
