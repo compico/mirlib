@@ -20,7 +20,7 @@ for path in "${ARDUINO_PATHS[@]}"; do
     if [[ -d "$path" ]]; then
         echo "  ✓ Найден Arduino IDE: $path"
         ARDUINO_FOUND=true
-        
+
         # Проверяем наличие Arduino.h
         if [[ -f "$path/hardware/arduino/avr/cores/arduino/Arduino.h" ]]; then
             echo "    ✓ Arduino.h найден: $path/hardware/arduino/avr/cores/arduino/Arduino.h"
@@ -40,13 +40,13 @@ echo "Поиск ESP32 Arduino Core:"
 ESP32_BASE="$HOME/.arduino15/packages/esp32/hardware/esp32"
 if [[ -d "$ESP32_BASE" ]]; then
     echo "  ✓ ESP32 пакеты найдены: $ESP32_BASE"
-    
+
     # Ищем последнюю версию
     ESP32_LATEST=$(ls -1v "$ESP32_BASE" | tail -1)
     if [[ -n "$ESP32_LATEST" ]]; then
         ESP32_PATH="$ESP32_BASE/$ESP32_LATEST"
         echo "  ✓ Последняя версия ESP32: $ESP32_PATH"
-        
+
         if [[ -f "$ESP32_PATH/cores/esp32/Arduino.h" ]]; then
             echo "    ✓ ESP32 Arduino.h найден: $ESP32_PATH/cores/esp32/Arduino.h"
             ARDUINO_CORE_PATH="$ESP32_PATH/cores/esp32"
@@ -54,9 +54,8 @@ if [[ -d "$ESP32_BASE" ]]; then
     fi
 else
     echo "  ✗ ESP32 Arduino Core не найден"
+    echo "Добавьте репозиторий "
 fi
-
-echo
 
 # Поиск библиотек Arduino
 echo "Поиск библиотек Arduino:"
@@ -92,7 +91,7 @@ for lib_path in "${LIBRARY_PATHS[@]}"; do
         for cc1101_name in "${CC1101_NAMES[@]}"; do
             if [[ -d "$lib_path/$cc1101_name" ]]; then
                 echo "  ✓ CC1101 найден: $lib_path/$cc1101_name"
-                
+
                 if [[ -f "$lib_path/$cc1101_name/ELECHOUSE_CC1101_SRC_DRV.h" ]]; then
                     echo "    ✓ Header найден: $lib_path/$cc1101_name/ELECHOUSE_CC1101_SRC_DRV.h"
                     CC1101_PATH="$lib_path/$cc1101_name"
@@ -106,6 +105,7 @@ done
 if [[ "$CC1101_FOUND" = false ]]; then
     echo "  ✗ CC1101 библиотека не найдена"
     echo "  Установите через Arduino IDE: Tools -> Manage Libraries -> SmartRC-CC1101-Driver-Lib"
+    echo "  Или через комманду arduino-cli lib install SmartRC-CC1101-Driver-Lib"
 fi
 
 echo
@@ -182,21 +182,21 @@ cat > arduino_includes.h << EOF
     // Заглушки для CLion IntelliSense
     #include <stdint.h>
     #include <stddef.h>
-    
+
     #define HIGH 1
     #define LOW 0
     #define INPUT 0
     #define OUTPUT 1
     #define F(string_literal) (string_literal)
-    
+
     typedef uint8_t byte;
-    
+
     void delay(unsigned long ms);
     unsigned long millis();
     void pinMode(uint8_t pin, uint8_t mode);
     void digitalWrite(uint8_t pin, uint8_t val);
     int digitalRead(uint8_t pin);
-    
+
     class SerialClass {
     public:
         void begin(unsigned long baud);
@@ -207,7 +207,7 @@ cat > arduino_includes.h << EOF
         void print(int val, int format);
         void println(int val, int format);
     };
-    
+
     extern SerialClass Serial;
 #endif
 
@@ -244,7 +244,7 @@ cat > arduino_includes.h << EOF
         bool CheckRxFifo(int timeout) { return false; }
         int ReceiveData(uint8_t* data) { return 0; }
     };
-    
+
     extern CC1101Class ELECHOUSE_cc1101;
 #endif
 EOF
