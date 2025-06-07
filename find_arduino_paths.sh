@@ -54,7 +54,11 @@ if [[ -d "$ESP32_BASE" ]]; then
     fi
 else
     echo "  ✗ ESP32 Arduino Core не найден"
-    echo "Добавьте репозиторий "
+    echo "Добавьте репозиторий для ядер"
+    echo "arduino-cli config add board_manager.additional_urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"
+    echo "Обновите индекс и установите ядро esp32"
+    echo "arduino-cli core update-index"
+    echo "arduino-cli core install esp32:esp32"
 fi
 
 # Поиск библиотек Arduino
@@ -105,7 +109,7 @@ done
 if [[ "$CC1101_FOUND" = false ]]; then
     echo "  ✗ CC1101 библиотека не найдена"
     echo "  Установите через Arduino IDE: Tools -> Manage Libraries -> SmartRC-CC1101-Driver-Lib"
-    echo "  Или через комманду arduino-cli lib install SmartRC-CC1101-Driver-Lib"
+    echo "  Или через команду arduino-cli lib install SmartRC-CC1101-Driver-Lib"
 fi
 
 echo
