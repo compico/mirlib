@@ -333,14 +333,14 @@ bool ProtocolUtils::validatePacket(const PacketData &packet) {
 
 void ProtocolUtils::printPacketHex(const PacketData &packet, const char *title) {
     Serial.print(title);
-    Serial.print(F(": "));
+    Serial.print(": ");
     printHex(packet.rawPacket, packet.rawSize, "");
 }
 
 void ProtocolUtils::printHex(const uint8_t *data, size_t size, const char *title) {
     if (title && strlen(title) > 0) {
         Serial.print(title);
-        Serial.print(F(": "));
+        Serial.print(": ");
     }
 
     for (size_t i = 0; i < size; i++) {

@@ -24,9 +24,10 @@ bool MirlibClient::sendCommand(BaseCommand *command, uint16_t targetAddress,
         return false;
     }
 
-#ifdef MIRLIB_DEBUG
+
+    #ifdef MIRLIB_DEBUG
         debugPrintPacket(requestPacket, "Отправка запроса");
-#endif
+    #endif
 
     // Отправка пакета
     if (!sendPacketOriginalStyle(requestPacket)) {

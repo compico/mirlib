@@ -102,8 +102,6 @@ bool MirlibBase::initializeCC1101() {
 
     // Калибровка частотного синтезатора
     ELECHOUSE_cc1101.SpiStrobe(0x33); // SCAL - Calibrate frequency synthesizer and turn it off
-    delay(1);
-
     // Очистка FIFO буферов
     ELECHOUSE_cc1101.SpiStrobe(0x3A); // SFRX - Flush the RX FIFO buffer
     ELECHOUSE_cc1101.SpiStrobe(0x3B); // SFTX - Flush the TX FIFO buffer
@@ -127,26 +125,41 @@ bool MirlibBase::sendPacketOriginalStyle(const PacketData &packet) {
         return false;
     }
 
+
+    #ifdef MIRLIB_DEBUG
+        MIRLIB_DEBUG_PRINT("Калибровка частотного синтезатора");
+    #endif
+
     // Калибровка частотного синтезатора
     ELECHOUSE_cc1101.SpiStrobe(0x33); // SCAL - Calibrate frequency synthesizer and turn it off
     delay(1);
+
+
+    #ifdef MIRLIB_DEBUG
+        MIRLIB_DEBUG_PRINT("Очистка TX FIFO и выход из RX/TX режима");
+    #endif
 
     // Очистка TX FIFO и выход из RX/TX режима
     ELECHOUSE_cc1101.SpiStrobe(0x3B); // SFTX - Flush the TX FIFO buffer
     ELECHOUSE_cc1101.SpiStrobe(0x36); // SIDLE - Exit RX / TX, turn off frequency synthesizer
 
+    #ifdef MIRLIB_DEBUG
+        MIRLIB_DEBUG_PRINT("Установка мощности передачи 10dB");
+    #endif
+
     // Установка мощности передачи 10dB
     ELECHOUSE_cc1101.SpiWriteReg(0x3E, 0xC4); // PATABLE - выставляем мощность 10dB
 
-    // Отправка пакета
-    ELECHOUSE_cc1101.SendData(const_cast<uint8_t *>(packet.rawPacket), packet.rawSize);
 
     #ifdef MIRLIB_DEBUG
-        MIRLIB_DEBUG_PRINT("Пакет отправлен");
+        debugPrintPacket(packet, "Отправка запроса");
         char msg[50];
         snprintf(msg, sizeof(msg), "Размер пакета: %d байт", packet.rawSize);
         MIRLIB_DEBUG_PRINT(msg);
     #endif
+
+    // Отправка пакета
+    ELECHOUSE_cc1101.SendData(const_cast<uint8_t *>(packet.rawPacket), packet.rawSize);
 
     // Очистка RX FIFO и переход в режим приема
     ELECHOUSE_cc1101.SpiStrobe(0x3A); // SFRX - Flush the RX FIFO buffer
