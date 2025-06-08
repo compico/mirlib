@@ -117,14 +117,13 @@ bool MirlibBase::initializeCC1101() {
     return true;
 }
 
-bool MirlibBase::sendPacketOriginalStyle(const PacketData &packet) {
+bool MirlibBase::sendPacketOriginalStyle(PacketData &packet) {
     if (!packet.isValid()) {
         #ifdef MIRLIB_DEBUG
             MIRLIB_DEBUG_PRINT("Невалидный пакет для отправки");
         #endif
         return false;
     }
-
 
     #ifdef MIRLIB_DEBUG
         MIRLIB_DEBUG_PRINT("Калибровка частотного синтезатора");
@@ -159,7 +158,7 @@ bool MirlibBase::sendPacketOriginalStyle(const PacketData &packet) {
     #endif
 
     // Отправка пакета
-    ELECHOUSE_cc1101.SendData(const_cast<uint8_t *>(packet.rawPacket), packet.rawSize);
+    ELECHOUSE_cc1101.SendData(packet.rawPacket, packet.rawSize);
 
     // Очистка RX FIFO и переход в режим приема
     ELECHOUSE_cc1101.SpiStrobe(0x3A); // SFRX - Flush the RX FIFO buffer

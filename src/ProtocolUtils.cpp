@@ -268,14 +268,14 @@ void ProtocolUtils::uint32ToBytes(uint32_t value, uint8_t *bytes) {
 }
 
 uint16_t ProtocolUtils::bytesToUint16(const uint8_t *bytes) {
-    return (uint16_t) bytes[0] | ((uint16_t) bytes[1] << 8);
+    return static_cast<uint16_t>(bytes[0]) | (static_cast<uint16_t>(bytes[1]) << 8);
 }
 
 uint32_t ProtocolUtils::bytesToUint32(const uint8_t *bytes) {
-    return (uint32_t) bytes[0] |
-           ((uint32_t) bytes[1] << 8) |
-           ((uint32_t) bytes[2] << 16) |
-           ((uint32_t) bytes[3] << 24);
+    return static_cast<uint32_t>(bytes[0]) |
+           (static_cast<uint32_t>(bytes[1]) << 8) |
+           (static_cast<uint32_t>(bytes[2]) << 16) |
+           (static_cast<uint32_t>(bytes[3]) << 24);
 }
 
 GenerationInfo ProtocolUtils::determineGeneration(uint8_t boardId, uint8_t role) {
@@ -351,9 +351,15 @@ void ProtocolUtils::printHex(const uint8_t *data, size_t size, const char *title
     Serial.println();
 }
 
-bool ProtocolUtils::createRequestPacket(uint8_t command, uint16_t destAddr, uint16_t srcAddr,
-                                        uint32_t password, const uint8_t *data, uint8_t dataSize,
-                                        PacketData &packet) {
+bool ProtocolUtils::createRequestPacket(
+    uint8_t command,
+    uint16_t destAddr,
+    uint16_t srcAddr,
+    uint32_t password,
+    const uint8_t *data,
+    uint8_t dataSize,
+    PacketData &packet
+) {
     packet.clear();
 
     // Set parameters
@@ -370,15 +376,20 @@ bool ProtocolUtils::createRequestPacket(uint8_t command, uint16_t destAddr, uint
 
     // Set data
     packet.dataSize = dataSize;
-    if (dataSize > 0 && data) {
+    if (dataSize > 0 && (data != nullptr)) {
         memcpy(packet.data, data, dataSize);
     }
 
     return packPacket(packet);
 }
 
-bool ProtocolUtils::createResponsePacket(const PacketData &originalRequest, uint32_t status,
-                                         const uint8_t *data, uint8_t dataSize, PacketData &packet) {
+bool ProtocolUtils::createResponsePacket(
+    const PacketData &originalRequest,
+    uint32_t status,
+    const uint8_t *data,
+    uint8_t dataSize,
+    PacketData &packet
+) {
     packet.clear();
 
     // Set parameters

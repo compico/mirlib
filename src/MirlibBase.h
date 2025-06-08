@@ -110,7 +110,7 @@ protected:
      * @param packet Пакет для отправки
      * @return true если отправлен успешно
      */
-    bool sendPacketOriginalStyle(const PacketData &packet);
+    bool sendPacketOriginalStyle(PacketData &packet);
 
     /**
      * @brief Получить пакет в стиле оригинального кода

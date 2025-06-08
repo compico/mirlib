@@ -4,8 +4,12 @@
 MirlibClient::MirlibClient(uint16_t deviceAddress) : MirlibBase(deviceAddress) {
 }
 
-bool MirlibClient::sendCommand(BaseCommand *command, uint16_t targetAddress,
-                               uint8_t *responseData, size_t responseSize) {
+bool MirlibClient::sendCommand(
+    BaseCommand *command,
+    uint16_t targetAddress,
+    uint8_t *responseData,
+    size_t responseSize
+) {
     if (command == nullptr) {
         setError(ERR_COMMAND_IS_NULL);
         return false;
@@ -17,9 +21,15 @@ bool MirlibClient::sendCommand(BaseCommand *command, uint16_t targetAddress,
 
     // Создание пакета запроса
     PacketData requestPacket;
-    if (!ProtocolUtils::createRequestPacket(command->getCommandCode(), targetAddress,
-                                            m_deviceAddress, m_password, requestData,
-                                            requestDataSize, requestPacket)) {
+    if (!ProtocolUtils::createRequestPacket(
+        command->getCommandCode(),
+        targetAddress,
+        m_deviceAddress,
+        m_password,
+        requestData,
+        requestDataSize,
+        requestPacket
+    )) {
         setError(ERR_FAIL_CREATE_PACKAGE);
         return false;
     }
