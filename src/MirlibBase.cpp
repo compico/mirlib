@@ -8,28 +8,20 @@ MirlibBase::MirlibBase(uint16_t deviceAddress)
       , m_status(0)
       , m_timeout(5000)
       , m_generation(UNKNOWN)
-      , m_gdo0Pin(2) // По умолчанию пин 2 для
       , m_lastError(ERR_NONE)
 {
 }
 
-bool MirlibBase::begin(int csPin, int gdo0Pin, int gdo2Pin) {
-    // Сохраняем пин GDO0 для использования в функциях
-    if (gdo0Pin >= 0) {
-        m_gdo0Pin = gdo0Pin;
-    }
+bool MirlibBase::begin(int gdo0Pin) {
+    ELECHOUSE_cc1101.setGDO0(gdo0Pin);
 
-    ELECHOUSE_cc1101.setGDO0(m_gdo0Pin);
-
-    // Проверка подключения CC1101
     if (!ELECHOUSE_cc1101.getCC1101()) {
         setError(ERR_SPI_CC1101_CON_ERROR);
-        return false;
+    } else {
+        #ifdef MIRLIB_DEBUG
+            MIRLIB_DEBUG_PRINT("SPI Connection CC1101 OK");
+        #endif
     }
-
-    #ifdef MIRLIB_DEBUG
-        MIRLIB_DEBUG_PRINT("SPI Connection CC1101 OK");
-    #endif
 
     // Инициализация CC1101 с оригинальными настройками
     initializeCC1101();
@@ -157,8 +149,19 @@ bool MirlibBase::sendPacketOriginalStyle(PacketData &packet) {
         MIRLIB_DEBUG_PRINT(msg);
     #endif
 
+    // // Добавляем длину пакета в заголовок для CC1101
+    // byte txBuffer[60] = {};
+    // txBuffer[0] = packet.rawSize;
+    // memcpy(&txBuffer[1], packet.rawPacket, packet.rawSize);
+    // // Отправка пакета
+    // ELECHOUSE_cc1101.SendData(txBuffer, packet.rawSize + 1);
+
     // Отправка пакета
     ELECHOUSE_cc1101.SendData(packet.rawPacket, packet.rawSize);
+
+    #ifdef MIRLIB_DEBUG
+        MIRLIB_DEBUG_PRINT("Пакет отправлен");
+    #endif
 
     // Очистка RX FIFO и переход в режим приема
     ELECHOUSE_cc1101.SpiStrobe(0x3A); // SFRX - Flush the RX FIFO buffer
@@ -184,6 +187,11 @@ bool MirlibBase::receivePacketOriginalStyle(PacketData &packet, uint32_t timeout
             uint8_t buffer[ProtocolConstants::MAX_PACKET_SIZE];
 
             const int len = ELECHOUSE_cc1101.ReceiveData(buffer);
+            if (len < 1) {
+                clearFifo();
+                delay(1);
+                continue;
+            }
 
             if (len > 0 && static_cast<size_t>(len) <= ProtocolConstants::MAX_PACKET_SIZE) {
                 #ifdef MIRLIB_DEBUG
@@ -233,6 +241,13 @@ bool MirlibBase::receivePacketOriginalStyle(PacketData &packet, uint32_t timeout
     #endif
 
     return false;
+}
+
+void MirlibBase::clearFifo() {
+    ELECHOUSE_cc1101.SpiStrobe(0x36); // SIDLE - Exit RX / TX, turn off frequency synthesizer
+    ELECHOUSE_cc1101.SpiStrobe(0x3A); // SFRX - Flush the RX FIFO buffer
+    ELECHOUSE_cc1101.SpiStrobe(0x3B); // SFTX - Flush the TX FIFO buffer
+    ELECHOUSE_cc1101.SpiStrobe(0x34); // SRX - Enable RX
 }
 
 void MirlibBase::setError(const ErrorCode code) {

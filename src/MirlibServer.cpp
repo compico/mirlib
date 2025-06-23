@@ -50,9 +50,9 @@ CommandHandler *MirlibServer::findCommandHandler(uint8_t commandCode) {
 }
 
 void MirlibServer::clearCommandHandlers() {
-    const CommandHandler *current = m_commandHandlers;
+    CommandHandler *current = m_commandHandlers;
     while (current != nullptr) {
-        const CommandHandler *next = current->next;
+        CommandHandler *next = current->next;
         delete current;
         current = next;
     }

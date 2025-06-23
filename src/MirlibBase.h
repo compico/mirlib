@@ -36,12 +36,10 @@ public:
 
     /**
      * @brief Инициализация протокола и CC1101 с оригинальными настройками
-     * @param csPin Пин Chip Select для CC1101
-     * @param gdo0Pin Пин GDO0 для CC1101 (по умолчанию: 2)
-     * @param gdo2Pin Пин GDO2 для CC1101 (опционально, -1 для отключения)
-     * @return true если инициализация прошла успешно
+     * @param gdo0Pin Пин GDO0 для CC1101 (по умолчанию: 22)
+     * @return Если инициализация прошла успешно - true
      */
-    bool begin(int csPin, int gdo0Pin = 2, int gdo2Pin = -1);
+    bool begin(int gdo0Pin = 2);
 
     /**
      * @brief Установить пароль устройства
@@ -95,7 +93,6 @@ protected:
     uint32_t m_status;
     uint32_t m_timeout;
     Generation m_generation;
-    int m_gdo0Pin; ///< Пин GDO0 для использования в функциях
     ErrorCode m_lastError;
 
     /**
@@ -139,6 +136,7 @@ protected:
      * @param title Заголовок для отладочного вывода
      */
     void debugPrintPacket(const PacketData &packet, const char *title);
+    void clearFifo();
 };
 
 #endif // MIRLIB_BASE_H
